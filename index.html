@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCT ― 状況判断訓練ツール｜防災士向け</title>
+<meta name="description" content="Speed & Correct Trainer（SCT）。防災士向けの状況判断訓練ツール。災害別の状況判断を、速く正確に。">
+<style>
+  :root{
+    --ink:#16212b; --sub:#5b6b78; --line:#dbe3ea; --bg:#eef2f5; --panel:#ffffff;
+    --navy:#0f2c4a; --navy2:#173e63; --teal:#2f7d78; --flame:#e8541e; --green:#1f9d57; --red:#d24b3e; --amber:#e0902a;
+    --shadow:0 4px 16px rgba(20,45,70,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:var(--ink);background:var(--bg);line-height:1.7}
+  .wrap{max-width:720px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+  header{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:16px 20px;text-align:center}
+  header .en{font-size:11px;letter-spacing:.22em;color:#9fd0cc;font-weight:700}
+  header h1{font-size:20px;font-weight:800;margin:2px 0 3px;letter-spacing:.04em}
+  header .jp{font-size:12px;color:#cfe0ea}
+  header .abbr{color:var(--flame);font-weight:900}
+  main{flex:1;padding:18px 16px 40px}
+
+  /* 共通 */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px}
+  .btn{display:block;width:100%;border:0;border-radius:11px;padding:15px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;transition:.12s}
+  .btn:active{transform:scale(.98)}
+  .btn-primary{background:var(--navy);color:#fff}
+  .btn-teal{background:var(--teal);color:#fff}
+  .btn-ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+
+  /* スタート画面：カテゴリー */
+  .lead{font-size:13.5px;color:var(--sub);text-align:center;margin-bottom:16px;line-height:1.8}
+  .cats{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .cat-btn{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:18px 10px;cursor:pointer;font-family:inherit;transition:.12s}
+  .cat-btn:hover{border-color:var(--teal)}
+  .cat-btn:active{transform:scale(.97)}
+  .cat-btn .ic{font-size:30px}
+  .cat-btn .nm{font-size:14px;font-weight:800;color:var(--navy)}
+  .cat-btn .best{font-size:10.5px;color:var(--sub)}
+  .cat-btn.all{grid-column:1 / -1;background:linear-gradient(135deg,var(--flame),#c0561f);border-color:transparent;color:#fff}
+  .cat-btn.all .nm{color:#fff}
+  .cat-btn.all .best{color:#ffe6da}
+
+  /* 出題画面 */
+  .quiz-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .quiz-top .prog{font-size:13px;font-weight:800;color:var(--navy)}
+  .quiz-top .timer{font-variant-numeric:tabular-nums;font-size:20px;font-weight:900;color:var(--flame);background:#fff;border:1.5px solid var(--line);border-radius:9px;padding:4px 12px}
+  .barwrap{height:7px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:16px}
+  .barwrap span{display:block;height:100%;background:var(--teal);width:0;transition:width .3s}
+  .qcat{display:inline-block;font-size:11px;font-weight:800;color:var(--teal);background:#e7f4f2;border-radius:20px;padding:3px 11px;margin-bottom:10px}
+  .qtext{font-size:16.5px;font-weight:700;line-height:1.7;color:var(--ink);margin-bottom:16px}
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{display:flex;align-items:flex-start;gap:11px;background:#fff;border:1.5px solid var(--line);border-radius:11px;padding:13px 14px;cursor:pointer;text-align:left;font-family:inherit;font-size:14.5px;line-height:1.6;transition:.12s}
+  .opt:hover{border-color:var(--teal)}
+  .opt .lb{flex:none;width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+  .opt.correct{border-color:var(--green);background:#eafaf0}
+  .opt.correct .lb{background:var(--green)}
+  .opt.wrong{border-color:var(--red);background:#fdeeec}
+  .opt.wrong .lb{background:var(--red)}
+  .opt:disabled{cursor:default}
+  .exp{margin-top:14px;background:#f6f9fb;border-left:4px solid var(--teal);border-radius:8px;padding:12px 14px;font-size:13.5px;line-height:1.75;color:#2a3540;display:none}
+  .exp.show{display:block}
+  .exp .verdict{font-weight:800;margin-bottom:5px}
+  .exp .verdict.ok{color:var(--green)}
+  .exp .verdict.ng{color:var(--red)}
+  .next-wrap{margin-top:14px;display:none}
+  .next-wrap.show{display:block}
+
+  /* 結果画面 */
+  .result-hero{text-align:center;padding:8px 0 4px}
+  .result-hero .big{font-size:40px;font-weight:900;color:var(--navy);font-variant-numeric:tabular-nums}
+  .result-hero .big small{font-size:18px;color:var(--sub)}
+  .result-hero .time{font-size:22px;font-weight:900;color:var(--flame);font-variant-numeric:tabular-nums;margin-top:2px}
+  .result-hero .lbl{font-size:12px;color:var(--sub)}
+  .score-line{display:flex;justify-content:center;gap:20px;margin:14px 0}
+  .score-line .b{text-align:center}
+  .score-line .b .v{font-size:22px;font-weight:900}
+  .score-line .b .v.ok{color:var(--green)}
+  .score-line .b .v.ng{color:var(--red)}
+  .score-line .b .k{font-size:11px;color:var(--sub)}
+  .rank-badge{text-align:center;font-size:15px;font-weight:800;margin:6px 0 12px}
+  .review{margin-top:8px}
+  .review h3{font-size:13px;color:var(--sub);font-weight:800;margin:14px 0 8px}
+  .rv{background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:8px;font-size:13px}
+  .rv .rvq{font-weight:700;margin-bottom:4px}
+  .rv .rva{color:var(--green);font-size:12.5px}
+  .rv .rvx{color:var(--red);font-size:12.5px}
+
+  /* ランキング */
+  .rank-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  .rank-table th,.rank-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+  .rank-table th{color:var(--sub);font-size:11px;font-weight:700}
+  .rank-table .rk{font-weight:900;color:var(--navy);width:36px}
+  .rank-table .me{background:#fff7 e6}
+  .rank-table td.t{font-variant-numeric:tabular-nums;font-weight:800}
+  .empty{color:var(--sub);font-size:13px;text-align:center;padding:16px}
+
+  .foot{font-size:11px;color:var(--sub);text-align:center;padding:16px;line-height:1.7}
+  .hide{display:none}
+  .namein{width:100%;border:1.5px solid var(--line);border-radius:9px;padding:11px;font-size:15px;font-family:inherit;margin:8px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="en">SPEED &amp; CORRECT TRAINER</div>
+    <h1><span class="abbr">SCT</span> ― 状況判断訓練ツール</h1>
+    <div class="jp">防災士のための、速く正確な判断力トレーニング</div>
+  </header>
+  <main id="main"></main>
+  <div class="foot">
+    出題は各カテゴリー20問からランダムに10問。選択肢の並びも毎回変わります。<br>
+    ※本ツールは訓練用です。実際の災害時は必ず気象庁・自治体等の最新情報に従ってください。
+  </div>
+</div>
+
+<script>
+const DATA = {"cats": {"earthquake": {"name": "地震", "icon": "🏚️", "questions": [{"q": "屋内で強い揺れを感じた。まず取るべき行動は？", "a": ["机の下などに入り、頭を守り身を低くする", "すぐに外へ走って避難する", "ブレーカーを落としに行く"], "correct": 0, "exp": "揺れの最中の移動は転倒・落下物で危険。まず身の安全（頭部保護・低い姿勢）を最優先する。"}, {"q": "揺れが収まった直後、屋内で最初に確認すべきことは？", "a": ["エレベーターで避難する", "自分と家族の安全・けがの有無と出口の確保", "家財を片付ける"], "correct": 1, "exp": "まず人の安全確認と、ドアを開けるなど避難経路の確保。エレベーターは使わない。"}, {"q": "地震後、ガスのにおいがする。正しい対応は？", "a": ["換気扇を回して換気する", "マッチで漏れ箇所を確認する", "火を使わず窓を開け、元栓を閉め、電気スイッチに触れない"], "correct": 2, "exp": "換気扇や電気スイッチの火花が引火の恐れ。火気厳禁で自然換気し元栓を閉める。"}, {"q": "エレベーターに乗車中に地震が発生した。最善の行動は？", "a": ["最寄り階で降りるため全階のボタンを押す", "次に止まった階で降りずに待つ", "停止ボタンを連打し続ける"], "correct": 0, "exp": "全階ボタンを押し、最初に停止した階で速やかに降りる。閉じ込め回避の基本。"}, {"q": "就寝中に地震で目覚めた。暗闇で最初にすべきことは？", "a": ["すぐ立ち上がって歩く", "布団や枕で頭を守り、揺れが収まるのを待つ", "窓を開けに行く"], "correct": 1, "exp": "暗所での移動はガラス片等で危険。まず頭部を守り、揺れが収まってから足元を確認して動く。"}, {"q": "地震後、津波警報は出ていないが海岸沿いにいる。強い揺れが長く続いた。", "a": ["情報を待ってその場にとどまる", "車で海沿いの道を移動する", "ただちに高台へ避難する"], "correct": 2, "exp": "長く強い揺れは津波の可能性。警報を待たず、まず高台へ避難するのが原則。"}, {"q": "自宅が大きく損傷し、余震が続いている。在宅避難か避難所か迷う。", "a": ["倒壊の危険があれば避難所へ移動する", "危険でも自宅にとどまる", "車中泊を長期間続ける"], "correct": 0, "exp": "建物に倒壊・傾斜の危険があれば命を優先し避難所等へ。車中泊長期化はエコノミークラス症候群の危険。"}, {"q": "地震で負傷者が出た。出血が多い。まず行うべき応急手当は？", "a": ["患部を心臓より下げて冷やす", "清潔な布で直接圧迫して止血する", "傷口を水で強くこすり洗う"], "correct": 1, "exp": "多量出血はまず直接圧迫止血。患部の挙上も併用。強くこするのは不適切。"}, {"q": "地震後、家族と離れている。安否確認の適切な手段は？", "a": ["繰り返し電話をかけ続ける", "相手が出るまで待ち続ける", "災害用伝言ダイヤル(171)やSNSを活用する"], "correct": 2, "exp": "通話は輻輳しやすい。171やSNS・災害用伝言板など複数手段を活用する。"}, {"q": "避難所へ向かう。持ち出すべき優先度が高いものは？", "a": ["非常持ち出し袋（水・薬・貴重品・懐中電灯等）", "大型家電やアルバム全部", "冷蔵庫の食品すべて"], "correct": 0, "exp": "命と健康維持に直結するもの（水・常備薬・情報・灯り・貴重品）を優先。"}, {"q": "ブロック塀のある道を避難中。余震に備えた歩き方は？", "a": ["塀沿いを素早く進む", "塀や自動販売機から離れて歩く", "塀に手をつきながら進む"], "correct": 1, "exp": "ブロック塀・自販機は転倒の危険。離れて歩くのが安全。"}, {"q": "高層ビルの上階にいる。長周期地震動で大きく揺れている。", "a": ["窓際で外を確認する", "階段で急いで降りる", "キャスター付き家具から離れ、身を low くして安全を確保"], "correct": 2, "exp": "長周期地震動では家具が大きく移動。可動物から離れ、揺れの最中の階段移動は避ける。"}, {"q": "地震直後、停電した。灯りの確保で適切なのは？", "a": ["懐中電灯やLEDライトを使う", "ろうそくを使う", "ガスコンロで照らす"], "correct": 0, "exp": "ガス漏れの可能性がある災害直後は裸火厳禁。懐中電灯等の電池式が安全。"}, {"q": "避難所生活が続く。健康維持で特に注意すべきことは？", "a": ["水分を控えてトイレを減らす", "こまめな水分補給と適度な運動", "できるだけ動かず横になる"], "correct": 1, "exp": "水分制限や不動はエコノミークラス症候群・脱水の危険。適度な水分と運動が重要。"}, {"q": "自宅に戻れることになった。室内へ入る前の確認は？", "a": ["すぐ電気をつけて中を確認する", "窓を全部閉めてから入る", "建物の傾き・亀裂やガス臭を外から確認する"], "correct": 2, "exp": "通電火災やガス漏れ・倒壊の危険。まず外観と臭いを確認し、安全を確かめてから。"}, {"q": "地震で本棚が倒れ、人が下敷きになった。周囲に人手がある。", "a": ["複数人で安全を確保しつつ救助し119番", "一人で無理に引き出す", "動かさず放置する"], "correct": 0, "exp": "二次被害を防ぎつつ複数人で救助、必要に応じ通報。無理な単独救助は危険。"}, {"q": "通電火災を防ぐため、避難時にすべきことは？", "a": ["照明をつけたまま避難する", "ブレーカーを落としてから避難する", "コンセントは挿したままにする"], "correct": 1, "exp": "停電復旧時の通電火災を防ぐため、避難時はブレーカーを落とす。"}, {"q": "余震が続く中、割れたガラスが散乱した室内を移動する。", "a": ["靴下のまま静かに歩く", "はだしで慎重に歩く", "底の厚い靴やスリッパを履いて移動する"], "correct": 2, "exp": "ガラス片でのけがを防ぐため、底の厚い履物が必須。"}, {"q": "地震発生時、調理中でコンロに火がついていた。強い揺れの最中。", "a": ["無理に火を消そうとせず、まず身の安全を確保", "すぐ火を消しに行く", "鍋を持って移動する"], "correct": 0, "exp": "揺れの最中の火の始末は火傷等の危険。まず身の安全、火は揺れが収まってから消す。"}, {"q": "デマや不確かな情報がSNSで拡散している。防災士の対応は？", "a": ["すぐ拡散して注意喚起する", "公的機関（気象庁・自治体等）の情報で確認してから行動・発信", "面白いので様子を見る"], "correct": 1, "exp": "不確かな情報の拡散は混乱を招く。一次情報・公的発表で裏を取る。"}]}, "fire": {"name": "火災", "icon": "🔥", "questions": [{"q": "室内で火災が発生。炎はまだ小さい。最初の行動は？", "a": ["大声で周囲に知らせ、初期消火を試みる", "写真を撮る", "窓を全部開ける"], "correct": 0, "exp": "まず周囲への通報（大声・警報）。初期消火は炎が天井に達する前まで。窓を開けると酸素供給で拡大。"}, {"q": "天ぷら油から出火した。正しい消火法は？", "a": ["水をかける", "火を止め、濡らさない・専用消火器やふたで空気を遮断", "うちわであおいで消す"], "correct": 1, "exp": "油に水は爆発的に燃え広がり危険。空気遮断（ふた・消火器）が正しい。"}, {"q": "火災で煙が充満し始めた。避難時の姿勢は？", "a": ["立って早足で進む", "煙の中を息を止めて走る", "姿勢を低くし、口鼻を覆って進む"], "correct": 2, "exp": "煙は上にたまる。低い姿勢で新鮮な空気を吸いつつ、口鼻を布で覆って避難。"}, {"q": "避難経路のドアが熱い。ドアの向こうが火災の可能性。", "a": ["開けずに別の経路を探す", "すぐ開けて通る", "少しずつ開けて確認する"], "correct": 0, "exp": "熱いドアの先は火勢が強い危険。開けると急激な延焼（バックドラフト）の恐れ。別経路へ。"}, {"q": "消火器を使う。適切な使い方の順序は？", "a": ["ホースを火元に向け、安全ピンを抜き、レバーを握る", "安全ピンを抜き、ホースを火元に向け、レバーを握る", "レバーを握ってから火に近づく"], "correct": 1, "exp": "ピンを抜く→ホースを火元へ→レバーを握る、が基本手順。手前から掃くように放射。"}, {"q": "初期消火の限界の目安は？", "a": ["家具が燃え始めるまで消火を続ける", "煙が出たら必ず最後まで消す", "炎が天井に達したら退避する"], "correct": 2, "exp": "炎が天井に届いたら消火は困難。ただちに避難し119番。無理は禁物。"}, {"q": "衣服に火がついた。正しい対処は？", "a": ["立ち止まり、倒れて転がり火を消す（ストップ・ドロップ・ロール）", "走って風で消す", "水を探しに走る"], "correct": 0, "exp": "走ると火が大きくなる。止まって倒れ、転がって火を消すのが国際的な基本。"}, {"q": "高層階で火災報知器が鳴った。廊下に煙は見えない。", "a": ["エレベーターで降りる", "状況を確認しつつ階段で避難準備をする", "窓から外を長時間眺める"], "correct": 1, "exp": "火災時エレベーターは使わない。階段避難を基本に、煙の有無で判断。"}, {"q": "避難後にすべきことは？", "a": ["忘れ物を取りに戻る", "消火の様子を近くで見る", "戻らず、全員の安否を確認し119番・点呼"], "correct": 2, "exp": "一度避難したら戻らない。安否確認と通報を優先。"}, {"q": "住宅用火災警報器の適切な設置・管理は？", "a": ["寝室・階段など就寝環境を中心に設置し定期点検", "台所だけに設置すれば十分", "一度つければ点検不要"], "correct": 0, "exp": "就寝中の逃げ遅れ防止のため寝室・階段等に設置。電池切れ確認など定期点検が必要。"}, {"q": "火災で逃げ遅れ、部屋に閉じ込められた。煙が入ってくる。", "a": ["ドアを開けて突破する", "ドアの隙間を濡れタオル等でふさぎ、窓から助けを求める", "押し入れに隠れる"], "correct": 1, "exp": "煙の侵入を防ぎつつ、窓等で救助を求め居場所を知らせる。"}, {"q": "電気機器から出火した。最初にすべきことは？", "a": ["水をかける", "手で機器を運び出す", "可能なら電源を切り・コンセントを抜き、無理なら避難と通報"], "correct": 2, "exp": "感電の危険で水は不可。まず電源遮断。危険なら避難優先。"}, {"q": "避難訓練で防災士が参加者に最も伝えるべきことは？", "a": ["消火より避難経路と初期対応の判断を身につける", "消火器の色を覚える", "火災の統計を暗記する"], "correct": 0, "exp": "命を守る行動（早期避難と適切な初期判断）の習得が最重要。"}, {"q": "就寝中に警報器が鳴り煙のにおい。最優先は？", "a": ["原因を詳しく調べる", "全員を起こしてただちに避難する", "貴重品をまとめる"], "correct": 1, "exp": "夜間火災は逃げ遅れが致命的。まず全員避難。"}, {"q": "ガスコンロの火が衣類の袖に燃え移りそう。予防の基本は？", "a": ["火力を最大にして手早く済ませる", "袖をまくらず作業する", "調理中は火のそばを離れず、防炎エプロン等を使う"], "correct": 2, "exp": "着衣着火の多くは調理中。火から目を離さず、防炎品の活用が有効。"}, {"q": "避難所で多くの人が使う暖房器具。火災予防で重要なのは？", "a": ["可燃物を近づけない・就寝時や離席時は消す", "つけっぱなしで暖かく保つ", "給油は使用中に行う"], "correct": 0, "exp": "暖房器具火災の基本予防。可燃物の距離確保、就寝・不在時消火、給油は消火後。"}, {"q": "消火栓を使う際、防災士として適切なのは？", "a": ["一人で操作する", "複数人で連携し、放水役と操作役を分担する", "水圧を確認せず放水する"], "correct": 1, "exp": "屋内消火栓は複数人での連携操作が基本。反動が大きく単独は危険。"}, {"q": "火災報知器が誤作動と思われる。適切な対応は？", "a": ["すぐ止めて無視する", "電池を抜いて放置する", "誤作動と決めつけず、まず火災の有無を確認する"], "correct": 2, "exp": "誤作動と決めつけるのは危険。必ず現場確認してから判断。"}, {"q": "避難時、エレベーターを使ってはいけない主な理由は？", "a": ["電気が止まり閉じ込められる恐れがあるため", "混雑して遅いため", "操作が難しいため"], "correct": 0, "exp": "火災時は停電・煙の流入・閉じ込めの危険があり、階段避難が原則。"}, {"q": "林野火災（山火事）の兆候を発見した。防災士の初動は？", "a": ["自分で消火を始める", "安全を確保し、位置情報を添えて速やかに119番通報", "風下から近づいて確認する"], "correct": 1, "exp": "山火事は延焼が速い。無理な消火や風下接近は危険。正確な通報が最優先。"}]}, "tsunami": {"name": "津波", "icon": "🌊", "questions": [{"q": "海辺で強い揺れを感じた。津波警報はまだ出ていない。", "a": ["ただちに高台や津波避難ビルへ避難する", "警報を確認してから動く", "海の様子を見に行く"], "correct": 0, "exp": "津波は警報より速いことがある。強い揺れ＝即高台避難が鉄則。"}, {"q": "津波避難で最も適切な方向は？", "a": ["海沿いに平行移動", "より高く、より遠くへ", "低い近道を通る"], "correct": 1, "exp": "『より高く・より遠く』が原則。標高の高い場所を目指す。"}, {"q": "津波避難時の移動手段として原則は？", "a": ["自動車で速く逃げる", "自転車で海沿いを走る", "徒歩で高台へ避難する"], "correct": 2, "exp": "渋滞・立ち往生の危険があるため原則徒歩。ただし地域事情で例外もある。"}, {"q": "第一波が引いた後の行動は？", "a": ["警報解除まで高台にとどまる", "すぐ自宅へ戻る", "浜へ様子を見に行く"], "correct": 0, "exp": "津波は繰り返し襲来し、後の波が大きいこともある。解除まで戻らない。"}, {"q": "避難中、渋滞で車が動かない。津波が迫る可能性。", "a": ["車内で待つ", "車を安全に置き、徒歩で高台へ移る", "Uターンする"], "correct": 1, "exp": "車を捨ててでも徒歩で高台へ。命を最優先。"}, {"q": "海面が突然引いて海底が見えた。これは何を示す？", "a": ["干潮で問題ない", "漁のチャンス", "津波の前兆の可能性"], "correct": 2, "exp": "急な引き波は津波の前兆。ただちに避難する。"}, {"q": "津波避難ビルの選び方で適切なのは？", "a": ["鉄筋コンクリートの高い建物の上階", "木造平屋", "地下のある建物"], "correct": 0, "exp": "頑丈で十分な高さのある建物の上階へ。木造・地下は不適。"}, {"q": "警報が『大津波警報』に切り替わった。避難済みだが低い高台にいる。", "a": ["その場にとどまる", "さらに高い場所へ移動する", "海の方向を確認する"], "correct": 1, "exp": "大津波警報は非常に高い津波の恐れ。可能な限りさらに高所へ。"}, {"q": "高齢者と一緒に避難する。防災士として適切なのは？", "a": ["自分だけ先に逃げる", "車で必ず送る", "早めの避難開始と経路の事前確認で共に避難"], "correct": 2, "exp": "要配慮者は避難に時間がかかる。早期開始と事前準備が鍵。"}, {"q": "川の近くにいる。津波警報が出た。", "a": ["川を津波が遡上する恐れがあり川から離れ高台へ", "川は関係ないので気にしない", "川沿いを下流へ歩く"], "correct": 0, "exp": "津波は河川を遡上する。川から離れて高台へ。"}, {"q": "津波避難で『て・ん・で・ん・こ』が意味するのは？", "a": ["全員そろってから逃げる", "各自がためらわず即座に高台へ逃げる", "家族を探してから逃げる"], "correct": 1, "exp": "『津波てんでんこ』は各自が即避難する教え。結果的に多くの命を守る。"}, {"q": "避難標識の『津波避難場所』と『津波避難ビル』の違いは？", "a": ["同じ意味である", "避難ビルの方が安全性が低い", "避難場所は高台、避難ビルは緊急一時退避の建物"], "correct": 2, "exp": "避難場所は高台等、避難ビルは近くに高台がない場合の緊急退避先。"}, {"q": "揺れは弱かったが遠地地震の津波情報が出た。", "a": ["情報に従い避難する", "弱い揺れなので無視する", "数時間後に考える"], "correct": 0, "exp": "遠地津波は揺れが小さくても到達する。情報に従い避難。"}, {"q": "避難後、家族の安否が不明。取るべき行動は？", "a": ["探しに海側へ戻る", "安全な場所で災害用伝言板等で確認する", "警報解除前に自宅へ戻る"], "correct": 1, "exp": "戻るのは厳禁。安全確保のうえ伝言板等で確認。"}, {"q": "津波の高さ『1m』の予報。人的被害の危険度は？", "a": ["低いので問題ない", "膝下なので歩ける", "1mでも人は流され危険"], "correct": 2, "exp": "わずか数十cmでも人は流される。1mは十分致命的。"}, {"q": "夜間に津波警報。停電で暗い。避難で重要なのは？", "a": ["懐中電灯を確保し、事前に決めた経路で避難", "明るくなるまで待つ", "車のライトで海を照らす"], "correct": 0, "exp": "夜間でも即避難。灯りの確保と、日頃の経路確認が生死を分ける。"}, {"q": "観光地で被災し土地勘がない。津波警報。", "a": ["人の流れと逆に動く", "スマホで最寄りの高台・避難ビルを確認し避難", "海沿いのホテルに戻る"], "correct": 1, "exp": "避難情報アプリや標識で高台・避難ビルを確認。周囲の避難行動も参考に。"}, {"q": "防災士として住民に津波避難で最も強調すべきは？", "a": ["正確な高さを予測すること", "持ち物を完璧にそろえること", "警報を待たず、揺れたら即・高く・遠くへ逃げる習慣"], "correct": 2, "exp": "即時避難の習慣化が最重要。準備より命を守る初動。"}, {"q": "津波注意報のみ発表。海岸で作業していた。", "a": ["海から上がり、海岸・河口から離れる", "注意報なので作業を続ける", "様子を見ながら続ける"], "correct": 0, "exp": "注意報でも海の中・海岸は危険。速やかに離れる。"}, {"q": "高潮と津波の違いとして正しいのは？", "a": ["どちらも同じ現象", "津波は地震等、高潮は台風等の気圧・風による海面上昇", "高潮の方が到達が速い"], "correct": 1, "exp": "津波は海底地形変動、高潮は低気圧・強風による海面上昇。成因が異なる。"}]}, "landslide": {"name": "土砂災害", "icon": "⛰️", "questions": [{"q": "大雨が続き、山の斜面から小石がパラパラ落ちてきた。これは？", "a": ["土砂災害（がけ崩れ）の前兆の可能性", "問題ない自然現象", "雨がやんだ合図"], "correct": 0, "exp": "小石の落下は崩壊の前兆。ただちに斜面から離れ避難する。"}, {"q": "斜面から急に水が湧き出し、濁ってきた。適切な行動は？", "a": ["湧き水を観察し続ける", "土砂災害の前兆とみて避難する", "水を汲んで確かめる"], "correct": 1, "exp": "濁り水・湧水の増加は崩壊の前兆。避難を判断する。"}, {"q": "『土砂災害警戒情報』が出た。土砂災害警戒区域に住んでいる。", "a": ["雨が弱まるまで自宅で待つ", "窓から斜面を見張る", "ただちに安全な場所へ避難する"], "correct": 2, "exp": "警戒情報は命に危険が迫るサイン。区域内は速やかに避難。"}, {"q": "避難が遅れ、外が危険で移動できない。がけの近くの家にいる。", "a": ["がけと反対側の2階以上へ移動する", "1階のがけ側にとどまる", "外へ飛び出す"], "correct": 0, "exp": "垂直避難。がけから離れた高い部屋へ移り、少しでも安全性を高める。"}, {"q": "土砂災害の前兆として正しくないものは？", "a": ["山鳴り・地鳴りがする", "空が急に晴れる", "樹木が裂ける音がする"], "correct": 1, "exp": "山鳴り、亀裂、湧水の変化、木の裂ける音などが前兆。晴天は前兆ではない。"}, {"q": "川がふだんより濁り、流木が流れてきた。上流で何が起きた可能性？", "a": ["水質が良くなった", "漁が増えた", "土砂崩れ・土石流の発生"], "correct": 2, "exp": "急な濁りと流木は上流の崩壊・土石流の兆候。川から離れる。"}, {"q": "土石流の避難方向として最も適切なのは？", "a": ["流れと直角方向の高い場所へ逃げる", "流れの下流へ走る", "川沿いを上流へ向かう"], "correct": 0, "exp": "土石流は速い。流れに対して直角に、かつ高い場所へ逃げる。"}, {"q": "夜間に大雨。土砂災害警戒区域だが避難情報はまだ『高齢者等避難』。", "a": ["自分は高齢でないので待つ", "早めの避難（夜間の移動を避け明るいうちに）を心がける", "レベルが上がってから動く"], "correct": 1, "exp": "夜間・豪雨時の移動は危険。早めの自主避難が命を守る。"}, {"q": "避難所へ向かう途中、道路が冠水し流れが速い。", "a": ["無理に渡る", "車で突破する", "引き返し、より安全な高い建物へ避難する"], "correct": 2, "exp": "冠水路の横断は危険。無理せず垂直避難など代替手段へ。"}, {"q": "『土砂災害警戒区域（イエロー）』と『特別警戒区域（レッド）』の違いは？", "a": ["レッドは建物損壊の恐れがある特に危険な区域", "同じ意味", "イエローの方が危険"], "correct": 0, "exp": "レッド（特別警戒区域）は建築規制もある特に危険な区域。"}, {"q": "地震の後に大雨。土砂災害の危険はどうなる？", "a": ["地震と無関係", "地盤が緩み危険が高まる", "むしろ安全になる"], "correct": 1, "exp": "地震で緩んだ斜面は少ない雨でも崩れやすい。警戒を強める。"}, {"q": "防災士として住民に伝える避難のタイミングは？", "a": ["被害が出てから避難", "近所が逃げてから避難", "前兆や警戒情報が出たら『空振りを恐れず』早めに避難"], "correct": 2, "exp": "早すぎるくらいでちょうどよい。空振り上等の姿勢が命を守る。"}, {"q": "擁壁やがけに新しい亀裂・はらみ出しを見つけた。", "a": ["崩壊の兆候として警戒・避難を検討し通報", "様子を見る", "自分で補修する"], "correct": 0, "exp": "亀裂・はらみは崩壊の前兆。近づかず避難と関係機関への連絡。"}, {"q": "ハザードマップで自宅が土砂災害の危険区域内だった。平時の備えは？", "a": ["気にしない", "避難場所と経路を家族で確認し備える", "雨の日だけ考える"], "correct": 1, "exp": "平時の確認・訓練が有事の行動を決める。"}, {"q": "避難中、斜面側と谷側どちらを歩くのが比較的安全か？", "a": ["斜面（山)側に寄る", "谷側の縁を歩く", "斜面から離れた側を選ぶ"], "correct": 2, "exp": "崩落は斜面側から来る。可能な限り斜面から離れた側を選ぶ。"}, {"q": "土砂災害の『前兆現象』を発見。近隣にも危険が及ぶ。防災士の行動は？", "a": ["近隣にも声かけし共に避難、必要に応じ通報", "自分だけ避難", "SNSだけで発信"], "correct": 0, "exp": "共助の観点で近隣へ声かけ。ただし自分の安全確保が前提。"}, {"q": "大雨特別警報が出た。これはどういう状況か？", "a": ["通常の大雨", "数十年に一度の重大な危険が迫る", "もう安全になった"], "correct": 1, "exp": "特別警報は重大な災害の切迫。ただちに命を守る行動を。"}, {"q": "避難所も危険な場合の『緊急安全確保』でとるべき行動は？", "a": ["遠くの避難所へ移動する", "外で救助を待つ", "その場で最も安全な高い場所へ（垂直避難）"], "correct": 2, "exp": "警戒レベル5相当。移動が危険なら建物内の高く斜面から遠い場所へ。"}, {"q": "土砂災害から避難後、雨がやんだ。すぐ帰宅してよいか？", "a": ["地盤が不安定なため安全確認まで戻らない", "すぐ帰宅する", "斜面を見て判断する"], "correct": 0, "exp": "雨後も崩壊の危険は残る。行政の安全確認・解除を待つ。"}, {"q": "防災士が土砂災害訓練で最も重視すべき点は？", "a": ["土質の専門分析", "前兆の知識と『早期避難』の意思決定", "過去の災害年表の暗記"], "correct": 1, "exp": "前兆を知り、ためらわず早期避難できる判断力の育成が要。"}]}, "heavyrain": {"name": "豪雨・河川増水", "icon": "🌧️", "questions": [{"q": "線状降水帯の発生情報が出た。意味として正しいのは？", "a": ["数時間にわたり同じ場所で激しい雨が続く恐れ", "まもなく雨がやむ", "弱い雨が広がる"], "correct": 0, "exp": "線状降水帯は非常に激しい雨が長時間継続し大災害につながる。ただちに警戒。"}, {"q": "警戒レベル4『避難指示』が発令された。とるべき行動は？", "a": ["高齢者だけ避難", "対象地域は全員ただちに避難する", "レベル5を待つ"], "correct": 1, "exp": "レベル4で全員避難が原則。レベル5（緊急安全確保）は間に合わない段階。"}, {"q": "アンダーパス（地下道）が冠水している。車で通行中。", "a": ["速度を上げて一気に通る", "水位を見ながら進む", "絶対に進入せず引き返す"], "correct": 2, "exp": "アンダーパスの冠水は水深が読めず車が水没する。進入厳禁。"}, {"q": "河川の水位が急上昇。堤防近くにいる。", "a": ["川から離れ高い場所へ避難する", "写真を撮りに堤防へ行く", "水位を測りに近づく"], "correct": 0, "exp": "増水・氾濫の危険。川・堤防に近づかず速やかに避難。"}, {"q": "夜間に大雨。避難指示が出たが外は暗く道路も冠水気味。", "a": ["無理に避難所へ歩く", "自宅の高い階へ垂直避難する", "車で移動する"], "correct": 1, "exp": "移動が危険なら屋内の高い所へ垂直避難。状況で最善を選ぶ。"}, {"q": "車の運転中に道路が急に冠水し始めた。", "a": ["低い方へ進む", "車内で待機し続ける", "高い場所へ車を移し、危険なら車を捨て徒歩避難"], "correct": 2, "exp": "冠水で車は制御不能・水没の危険。高所へ、危険なら車を捨てる。"}, {"q": "『キキクル（危険度分布）』の紫（危険）が自宅付近に出た。", "a": ["ただちに避難行動をとる", "まだ大丈夫と考える", "赤になるまで待つ"], "correct": 0, "exp": "紫は災害切迫。速やかに避難。次の『黒』は既に災害発生の段階。"}, {"q": "床上浸水が始まった屋内での行動は？", "a": ["1階にとどまる", "上階や高い場所へ移動し救助を待つ", "外の濁流を歩いて渡る"], "correct": 1, "exp": "濁流の歩行は危険。垂直避難し安全を確保して救助を待つ。"}, {"q": "側溝や用水路の様子を見に行くのが危険な理由は？", "a": ["汚れるから", "遠いから", "増水で転落・流される事故が多い"], "correct": 2, "exp": "豪雨時の見回り中の転落死が多い。近づかない。"}, {"q": "避難する際、浸水した道を歩かざるを得ない。備えとして適切なのは？", "a": ["はき慣れた靴を履き、棒で足元を確認しながら進む", "長靴を履く", "はだしで進む"], "correct": 0, "exp": "長靴は水が入ると動けない。ひも靴で、マンホール等の穴を棒で確認。"}, {"q": "警戒レベルと避難情報の対応で正しいのは？", "a": ["レベル3で全員避難", "レベル3は高齢者等避難、レベル4は避難指示", "レベル5で初めて避難開始"], "correct": 1, "exp": "レベル3=高齢者等避難、4=避難指示（全員）、5=緊急安全確保。"}, {"q": "大雨の中、地下室・半地下にいる。浸水の危険は？", "a": ["地下は安全", "水は入らない", "水が一気に流れ込み逃げ遅れやすく危険"], "correct": 2, "exp": "地下・半地下は急激に浸水し扉が開かなくなる。早めに地上・高所へ。"}, {"q": "氾濫危険水位を超えたと発表。まだ自宅にいる。", "a": ["ただちに避難する", "水が来てから避難", "近所を確認してから"], "correct": 0, "exp": "氾濫危険水位超過はいつ氾濫してもおかしくない。即避難。"}, {"q": "避難所が満員・遠い。安全な親戚宅が高台にある。", "a": ["必ず指定避難所へ行く", "安全な親戚宅等への『縁故避難』も有効", "避難しない"], "correct": 1, "exp": "避難先は指定避難所に限らない。安全な場所への分散避難も推奨。"}, {"q": "マンホールや側溝のふたが浮いている冠水路。危険性は？", "a": ["飛び越えれば安全", "水が澄んでいれば大丈夫", "穴に落ちる危険があり近づかない"], "correct": 2, "exp": "冠水路は穴が見えず転落の危険。近づかない・通らない。"}, {"q": "防災士として『マイ・タイムライン』の意義を説明するなら？", "a": ["いつ何をするか避難行動を時系列で事前に決めておく", "当日その場で考える", "行政に任せる"], "correct": 0, "exp": "マイ・タイムラインは家庭ごとの避難計画。迷わず動ける。"}, {"q": "川の増水で1階が浸水し停電。夜間で孤立した。", "a": ["泳いで脱出する", "高い階で灯り・音で存在を知らせ救助を待つ", "屋根から飛び降りる"], "correct": 1, "exp": "むやみな脱出は危険。安全な高所で居場所を知らせ救助を待つ。"}, {"q": "内水氾濫とは何か？", "a": ["川の堤防が決壊すること", "海水の逆流", "下水・排水が追いつかず市街地に水があふれる現象"], "correct": 2, "exp": "内水氾濫は排水能力を超えた雨で低地・市街地が浸水する現象。"}, {"q": "大雨時、要配慮者（高齢者・障がい者）の避難支援で重要なのは？", "a": ["早い段階（高齢者等避難）で支援を開始する", "レベルが上がってから支援", "本人任せにする"], "correct": 0, "exp": "移動に時間がかかる要配慮者は、早期からの支援開始が命を守る。"}, {"q": "避難情報が出ていないが、身の危険を感じる大雨。防災士の判断は？", "a": ["情報が出るまで待つ", "自らの判断で早めに自主避難する", "近所の様子だけ見る"], "correct": 1, "exp": "情報は後追いになりがち。危険を感じたら自主避難する主体性が重要。"}]}}};
+const N_ASK = 10; // 出題数
+
+// ===== 全国ランキング設定 =====
+// スプレッドシート＋GASを設置したら、下の '' に「ウェブアプリのURL」を貼り付けてください。
+// 空のままなら、この端末内だけのランキングで動作します（設置前でも壊れません）。
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbyNiLh6KALGq8RgSsamnNm3bP39y9zLnAm99Y6TrwRt-n2F_WuTgt4nMuiKsPs8-2DE/exec';
+
+// ---- localStorage ラッパ（埋め込み環境では無効でもエラーにしない） ----
+function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+
+let state = {};
+const main = document.getElementById('main');
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// ===== スタート画面 =====
+function renderStart(){
+  let cats = '';
+  Object.keys(DATA.cats).forEach(key=>{
+    const c=DATA.cats[key];
+    const best=lsGet('sct_best_'+key);
+    const bestTxt = best ? ('ベスト '+fmtTime(best.time)+'／'+best.score+'問正解') : '未挑戦';
+    cats += `<button class="cat-btn" onclick="startQuiz('${key}')">
+      <span class="ic">${c.icon}</span><span class="nm">${c.name}</span><span class="best">${bestTxt}</span></button>`;
+  });
+  main.innerHTML = `
+    <p class="lead">カテゴリーを選び、<b>10問</b>の状況判断に挑戦。<br><b>速く・正確に</b>答えるほど高評価。タイムが記録され、ランキングされます。</p>
+    <div class="cats">${cats}</div>
+    <div style="margin-top:16px">
+      <button class="btn btn-ghost" onclick="renderRankingSelect()">🏆 ランキングを見る</button>
+    </div>`;
+}
+
+// ===== 出題開始 =====
+function startQuiz(catKey){
+  const c=DATA.cats[catKey];
+  const pool=c.questions.map((q,i)=>({...q,_cat:c.name}));
+  shuffle(pool);
+  const picked=pool.slice(0, Math.min(N_ASK, pool.length));
+  // 各問の選択肢もシャッフル（正解位置を追従）
+  const qs=picked.map(q=>{
+    const idx=[0,1,2]; shuffle(idx);
+    const opts=idx.map(i=>q.a[i]);
+    const correct=idx.indexOf(q.correct);
+    return {q:q.q, a:opts, correct, exp:q.exp};
+  });
+  state={catKey, catName:c.name, qs, cur:0, correct:0, startAt:Date.now(), elapsed:0, timerId:null, answers:[]};
+  state.timerId=setInterval(tick,100);
+  renderQuestion();
+}
+
+function tick(){
+  state.elapsed = (Date.now()-state.startAt)/1000;
+  const t=document.getElementById('timer');
+  if(t) t.textContent=fmtTime(state.elapsed);
+}
+
+function renderQuestion(){
+  const i=state.cur, q=state.qs[i];
+  main.innerHTML = `
+    <div class="quiz-top">
+      <span class="prog">${state.catName}　第 ${i+1} / ${state.qs.length} 問</span>
+      <span class="timer" id="timer">${fmtTime(state.elapsed)}</span>
+    </div>
+    <div class="barwrap"><span style="width:${i/state.qs.length*100}%"></span></div>
+    <div class="card">
+      <span class="qcat">状況判断</span>
+      <div class="qtext">${q.q}</div>
+      <div class="opts" id="opts">
+        ${q.a.map((o,idx)=>`<button class="opt" onclick="answer(${idx})">
+          <span class="lb">${'ABC'[idx]}</span><span>${o}</span></button>`).join('')}
+      </div>
+      <div class="exp" id="exp"></div>
+      <div class="next-wrap" id="nextwrap">
+        <button class="btn btn-teal" onclick="nextQ()">${i+1<state.qs.length?'次の問題 ▶':'結果を見る 🏁'}</button>
+      </div>
+    </div>`;
+}
+
+function answer(sel){
+  const q=state.qs[state.cur];
+  const opts=document.querySelectorAll('#opts .opt');
+  opts.forEach((b,idx)=>{
+    b.disabled=true;
+    if(idx===q.correct) b.classList.add('correct');
+    if(idx===sel && sel!==q.correct) b.classList.add('wrong');
+  });
+  const ok = sel===q.correct;
+  if(ok) state.correct++;
+  state.answers.push({q:q.q, correct:q.a[q.correct], chosen:q.a[sel], ok});
+  const exp=document.getElementById('exp');
+  exp.innerHTML = `<div class="verdict ${ok?'ok':'ng'}">${ok?'◎ 正解':'✕ 不正解'}</div>${q.exp}`;
+  exp.classList.add('show');
+  document.getElementById('nextwrap').classList.add('show');
+}
+
+function nextQ(){
+  if(state.cur+1 < state.qs.length){ state.cur++; renderQuestion(); }
+  else finishQuiz();
+}
+
+function finishQuiz(){
+  clearInterval(state.timerId);
+  const time=state.elapsed, score=state.correct, total=state.qs.length;
+  // 記録（全問正解のときのみベストタイム更新の対象。部分正解も記録は残す）
+  saveRecord(state.catKey, score, total, time);
+  renderResult(score, total, time);
+}
+
+// ===== 結果画面 =====
+function renderResult(score, total, time){
+  const perfect = score===total;
+  const best=lsGet('sct_best_'+state.catKey);
+  let rankMsg='';
+  if(perfect){
+    rankMsg = `<div class="rank-badge" style="color:var(--green)">🎉 全問正解！ タイム ${fmtTime(time)}</div>`;
+  }else{
+    rankMsg = `<div class="rank-badge" style="color:var(--amber)">正確さがカギ。全問正解でランキング上位を目指そう</div>`;
+  }
+  const review = state.answers.map(a=>`
+    <div class="rv">
+      <div class="rvq">${a.ok?'◎':'✕'} ${a.q}</div>
+      ${a.ok?`<div class="rva">正解：${a.correct}</div>`
+            :`<div class="rvx">あなた：${a.chosen}</div><div class="rva">正解：${a.correct}</div>`}
+    </div>`).join('');
+  main.innerHTML = `
+    <div class="card">
+      <div class="result-hero">
+        <div class="lbl">${state.catName}</div>
+        <div class="big">${score}<small>/${total} 問正解</small></div>
+        <div class="time">⏱ ${fmtTime(time)}</div>
+      </div>
+      ${rankMsg}
+      <button class="btn btn-primary" onclick="promptNameAndRank(${score},${total},${time})">🏆 ランキングに登録</button>
+      <div style="height:8px"></div>
+      <button class="btn btn-teal" onclick="startQuiz('${state.catKey}')">もう一度挑戦</button>
+      <div style="height:8px"></div>
+      <button class="btn btn-ghost" onclick="renderStart()">カテゴリー選択に戻る</button>
+    </div>
+    <div class="review">
+      <h3>解答のふり返り</h3>
+      ${review}
+    </div>`;
+}
+
+// ===== 記録・ランキング =====
+function saveRecord(catKey, score, total, time){
+  // ベスト（全問正解のうち最速）
+  if(score===total){
+    const best=lsGet('sct_best_'+catKey);
+    if(!best || time<best.time){ lsSet('sct_best_'+catKey, {time, score, at:Date.now()}); }
+  }
+}
+function promptNameAndRank(score,total,time){
+  const perfect=score===total;
+  main.innerHTML = `
+    <div class="card">
+      <h3 style="font-size:16px;color:var(--navy);margin-bottom:6px">ランキング登録</h3>
+      <p style="font-size:13px;color:var(--sub);margin-bottom:6px">
+        ${state.catName}／${score}/${total}問・${fmtTime(time)}<br>
+        ${perfect?'全問正解！ タイムでランキングされます。':'※ランキングは全問正解者をタイム順に掲載します。今回は記録として残ります。'}
+      </p>
+      <input class="namein" id="namein" maxlength="12" placeholder="ニックネーム（12文字まで）">
+      <button class="btn btn-primary" onclick="doRank(${score},${total},${time})">登録する</button>
+      <div style="height:8px"></div>
+      <button class="btn btn-ghost" onclick="renderResult(${score},${total},${time})">戻る</button>
+    </div>`;
+}
+function doRank(score,total,time){
+  const nm=(document.getElementById('namein').value||'名無しの防災士').slice(0,12);
+  if(GAS_URL){
+    // 全国ランキング：スプレッドシートへ送信
+    const body=new URLSearchParams({name:nm, cat:state.catKey, score:String(score), total:String(total), time:String(time)});
+    // 画面を「送信中」に
+    document.querySelector('.card').innerHTML='<div style="text-align:center;padding:20px;color:var(--sub)">全国ランキングに登録中…</div>';
+    fetch(GAS_URL, {method:'POST', body})
+      .then(function(){ renderRanking(state.catKey, nm+'|'+time); })
+      .catch(function(){
+        // 通信失敗時は端末内に保存してフォールバック
+        saveLocalRank(nm,score,total,time);
+        renderRanking(state.catKey, nm+'|'+time);
+      });
+    return;
+  }
+  // 端末内ランキング
+  saveLocalRank(nm,score,total,time);
+  renderRanking(state.catKey, nm+'|'+time);
+}
+function saveLocalRank(nm,score,total,time){
+  const key='sct_rank_'+state.catKey;
+  const list=lsGet(key)||[];
+  list.push({name:nm, score, total, time, perfect:score===total, at:Date.now()});
+  list.sort((a,b)=>{
+    if(a.perfect!==b.perfect) return a.perfect?-1:1;
+    if(a.perfect&&b.perfect) return a.time-b.time;
+    if(a.score!==b.score) return b.score-a.score;
+    return a.time-b.time;
+  });
+  lsSet(key, list.slice(0,50));
+}
+function renderRankingSelect(){
+  let cats='';
+  Object.keys(DATA.cats).forEach(key=>{
+    const c=DATA.cats[key];
+    cats+=`<button class="cat-btn" onclick="renderRanking('${key}')"><span class="ic">${c.icon}</span><span class="nm">${c.name}</span></button>`;
+  });
+  main.innerHTML=`<p class="lead">ランキングを見るカテゴリーを選んでください。</p><div class="cats">${cats}</div>
+    <div style="margin-top:16px"><button class="btn btn-ghost" onclick="renderStart()">戻る</button></div>`;
+}
+function renderRanking(catKey, highlight){
+  const c=DATA.cats[catKey];
+  if(GAS_URL){
+    main.innerHTML='<div class="card"><div style="text-align:center;padding:20px;color:var(--sub)">全国ランキングを読み込み中…</div></div>';
+    fetch(GAS_URL+'?cat='+encodeURIComponent(catKey))
+      .then(function(r){return r.json();})
+      .then(function(list){ drawRanking(catKey, list||[], highlight, true); })
+      .catch(function(){
+        // 失敗時は端末内を表示
+        drawRanking(catKey, lsGet('sct_rank_'+catKey)||[], highlight, false);
+      });
+    return;
+  }
+  drawRanking(catKey, lsGet('sct_rank_'+catKey)||[], highlight, false);
+}
+function drawRanking(catKey, list, highlight, national){
+  const c=DATA.cats[catKey];
+  let rows='';
+  if(!list || list.length===0){
+    rows=`<tr><td colspan="4"><div class="empty">まだ記録がありません。<br>挑戦して1位を目指しましょう！</div></td></tr>`;
+  }else{
+    list.slice(0,20).forEach((r,i)=>{
+      const isMe = highlight && (r.name+'|'+r.time)===highlight;
+      rows+=`<tr class="${isMe?'me':''}">
+        <td class="rk">${i+1}</td>
+        <td>${r.name}${r.perfect?'':' <span style="color:var(--sub);font-size:11px">('+r.score+'/'+r.total+')</span>'}</td>
+        <td class="t">${fmtTime(r.time)}</td>
+        <td style="font-size:11px;color:var(--sub)">${r.perfect?'全問正解':''}</td>
+      </tr>`;
+    });
+  }
+  const scope = national ? '🌐 全国ランキング' : '📱 この端末のランキング';
+  main.innerHTML=`
+    <div class="card">
+      <h3 style="font-size:16px;color:var(--navy);margin-bottom:2px">${c.icon} ${c.name}　ランキング</h3>
+      <p style="font-size:11.5px;color:var(--sub);margin-bottom:8px">${scope}／全問正解者をタイムの速い順に掲載</p>
+      <table class="rank-table">
+        <thead><tr><th>順位</th><th>名前</th><th>タイム</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <button class="btn btn-teal" onclick="startQuiz('${catKey}')">このカテゴリーに挑戦</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-ghost" onclick="renderStart()">トップに戻る</button>`;
+}
+
+function fmtTime(sec){
+  sec=Number(sec)||0;
+  const m=Math.floor(sec/60), s=Math.floor(sec%60), ms=Math.floor((sec*10)%10);
+  return (m>0? m+'分' : '') + s + '.' + ms + '秒';
+}
+
+renderStart();
+</script>
+</body>
+</html>
