@@ -36,6 +36,32 @@
   .btn-teal{background:var(--teal);color:#fff}
   .btn-ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
 
+  /* ===== TOP画面 ===== */
+  #topScreen{position:fixed;inset:0;z-index:1000;background:#0f2c4a;
+    display:flex;align-items:center;justify-content:center;padding:16px}
+  #topScreen.hide{display:none}
+  .top-inner{position:relative;width:100%;max-width:1080px}
+  .top-img{width:100%;height:auto;display:block;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .top-start{
+    position:absolute;left:50%;bottom:11%;transform:translateX(-50%);
+    display:inline-flex;align-items:center;gap:12px;
+    background:var(--flame);color:#fff;border:0;border-radius:999px;
+    font-family:inherit;font-weight:900;font-size:clamp(18px,3vw,26px);letter-spacing:.06em;
+    padding:clamp(13px,1.8vw,18px) clamp(38px,6vw,64px);cursor:pointer;
+    box-shadow:0 8px 24px rgba(232,84,30,.5), 0 2px 0 rgba(255,255,255,.2) inset;
+    transition:transform .12s ease, background .12s ease;
+  }
+  .top-start:hover{background:#c0561f;transform:translateX(-50%) translateY(-2px)}
+  .top-start:active{transform:translateX(-50%)}
+  .top-start .ts-tri{width:0;height:0;border-style:solid;border-width:9px 0 9px 15px;
+    border-color:transparent transparent transparent #fff;margin-left:2px}
+  /* 脈打つ光輪 */
+  .top-start::before{content:"";position:absolute;inset:0;border-radius:999px;
+    box-shadow:0 0 0 0 rgba(232,84,30,.55);animation:tsbeat 2.4s ease-out infinite;pointer-events:none}
+  @keyframes tsbeat{0%{box-shadow:0 0 0 0 rgba(232,84,30,.5)}70%{box-shadow:0 0 0 20px rgba(232,84,30,0)}100%{box-shadow:0 0 0 0 rgba(232,84,30,0)}}
+  @media(prefers-reduced-motion:reduce){.top-start::before{animation:none}.top-start:hover{transform:translateX(-50%)}}
+  @media(max-width:560px){ .top-start{bottom:8%} }
+
   /* スタート画面：カテゴリー */
   .lead{font-size:13.5px;color:var(--sub);text-align:center;margin-bottom:16px;line-height:1.8}
   .cats{display:grid;grid-template-columns:1fr 1fr;gap:11px}
@@ -109,6 +135,17 @@
 </style>
 </head>
 <body>
+
+<!-- ===== TOP画面（画像＋スタートボタン） ===== -->
+<div id="topScreen">
+  <div class="top-inner">
+    <img class="top-img" src="top.png" alt="災害時 状況判断訓練 SPEED & CORRECT TRAINER">
+    <button class="top-start" onclick="enterApp()">
+      <span class="ts-tri"></span><span>スタート</span>
+    </button>
+  </div>
+</div>
+
 <div class="wrap">
   <header>
     <div class="head-in">
@@ -389,6 +426,11 @@ function fmtTime(sec){
   sec=Number(sec)||0;
   const m=Math.floor(sec/60), s=Math.floor(sec%60), ms=Math.floor((sec*10)%10);
   return (m>0? m+'分' : '') + s + '.' + ms + '秒';
+}
+
+// TOP画面からアプリ本体へ入る
+function enterApp(){
+  document.getElementById('topScreen').classList.add('hide');
 }
 
 renderStart();
